@@ -49,7 +49,12 @@ export function CalendarScreen() {
                 items.forEach((entry) => {
                     const day = Number(entry.day.split('-')[2]);
                     if (!Number.isNaN(day)) {
-                        map[day] = true;
+                        const kind = entry.aad && typeof entry.aad === 'object' && 'kind' in entry.aad
+                            ? (entry.aad as { kind?: string }).kind
+                            : null;
+                        if (kind !== 'times') {
+                            map[day] = true;
+                        }
                     }
                 });
                 setEntries(map);

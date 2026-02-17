@@ -137,12 +137,14 @@ export function TodayScreen() {
                 await updateEntry(entryId, {
                     ciphertext: encrypted.ciphertext,
                     iv: encrypted.iv,
+                    aad: { kind: 'entry' },
                 });
             } else {
                 const created = await createEntry({
                     day: entryDate,
                     ciphertext: encrypted.ciphertext,
                     iv: encrypted.iv,
+                    aad: { kind: 'entry' },
                 });
                 setEntryId(created.id);
             }
@@ -158,7 +160,16 @@ export function TodayScreen() {
             <section className="space-y-6">
                 {vaultStatus !== 'unlocked' ? (
                     <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
-                        Dein Vault ist gesperrt. Bitte entsperren, um Einträge zu sehen.
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <span>Dein Vault ist gesperrt. Bitte entsperren, um Einträge zu sehen.</span>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/vault/unlock')}
+                                className="rounded-full border border-amber-300 bg-white px-3 py-1 text-xs text-amber-800"
+                            >
+                                Jetzt entsperren
+                            </button>
+                        </div>
                     </div>
                 ) : null}
                 <div className="rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm dark:border-emerald-800/60 dark:bg-slate-900/80">

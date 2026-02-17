@@ -258,16 +258,23 @@ export function SettingsScreen() {
                 };
                 const encrypted = await encryptEntry(nextData);
 
+                const aadKind = existingEntry?.aad && typeof existingEntry.aad === 'object' && 'kind' in existingEntry.aad
+                    ? (existingEntry.aad as { kind?: string }).kind
+                    : null;
+                const nextAad = aadKind === 'entry' ? { kind: 'entry' } : { kind: 'times' };
+
                 if (entryId) {
                     await updateEntry(entryId, {
                         ciphertext: encrypted.ciphertext,
                         iv: encrypted.iv,
+                        aad: nextAad,
                     });
                 } else {
                     await createEntry({
                         day: date,
                         ciphertext: encrypted.ciphertext,
                         iv: encrypted.iv,
+                        aad: nextAad,
                     });
                 }
             }

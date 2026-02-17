@@ -91,7 +91,9 @@ SQL);
         $driver = DB::getDriverName();
 
         if ($driver === 'mysql') {
-            DB::statement('ALTER TABLE users ADD COLUMN username VARCHAR(255) NOT NULL UNIQUE AFTER id');
+            if (!Schema::hasColumn('users', 'username')) {
+                DB::statement('ALTER TABLE users ADD COLUMN username VARCHAR(255) NOT NULL UNIQUE AFTER id');
+            }
             DB::statement('ALTER TABLE users MODIFY email VARCHAR(255) NULL');
             return;
         }

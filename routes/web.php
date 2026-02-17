@@ -13,5 +13,5 @@ Route::prefix('api/auth')->middleware('throttle:10,1')->group(function () {
     Route::match(['get', 'post'], '/{provider}/callback', [SocialAuthController::class, 'callback']);
 });
 
-Route::view('/', 'spa')->name('home');
+Route::view('/', 'landing')->name('home');
 Route::view('/{any}', 'spa')->where('any', '^(?!api|sanctum).*$');

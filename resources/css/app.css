@@ -89,6 +89,18 @@
     }
 }
 
+@media (max-width: 768px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+body.keyboard-open .app-bottom-nav {
+    display: none;
+}
+
 @keyframes fadein {
     from {
         opacity: 0;

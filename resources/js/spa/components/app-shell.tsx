@@ -21,6 +21,30 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
         }
     }, [navigate, status, user]);
 
+    useEffect(() => {
+        if (!('visualViewport' in window)) {
+            return;
+        }
+
+        const viewport = window.visualViewport;
+        if (!viewport) {
+            return;
+        }
+
+        const baseHeight = viewport.height;
+        const update = () => {
+            const keyboardOpen = viewport.height < baseHeight - 120;
+            document.body.classList.toggle('keyboard-open', keyboardOpen);
+        };
+
+        update();
+        viewport.addEventListener('resize', update);
+        return () => {
+            viewport.removeEventListener('resize', update);
+            document.body.classList.remove('keyboard-open');
+        };
+    }, []);
+
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f1f5f9,_#ffffff)] text-slate-900 dark:bg-[radial-gradient(circle_at_top,_#0f172a,_#020617)] dark:text-slate-100">
             <header className="sticky top-0 z-10 border-b border-slate-200/60 bg-white/80 backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/80">
@@ -37,7 +61,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
             <main className="mx-auto w-full max-w-md px-5 pb-28 pt-6 animate-[fadein_500ms_ease-out]">
                 {children}
             </main>
-            <nav className="fixed bottom-0 left-0 right-0 border-t border-slate-200/60 bg-white/90 backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/90">
+            <nav className="app-bottom-nav fixed bottom-0 left-0 right-0 border-t border-slate-200/60 bg-white/90 backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/90">
                 <div className="mx-auto flex max-w-md items-center justify-between px-6 py-3">
                     {navItems.map(({ to, label, icon: Icon }) => (
                         <NavLink

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import '../css/app.css';
 import { AuthScreen } from './spa/screens/auth-screen';
 import { VaultSetupScreen } from './spa/screens/vault-setup-screen';
@@ -19,6 +19,8 @@ import { useVaultStore } from './spa/lib/vault-store';
 function Protected({ children }: { children: JSX.Element }) {
     const status = useAuthStore((state) => state.status);
     const user = useAuthStore((state) => state.user);
+    const vaultStatus = useVaultStore((state) => state.status);
+    const location = useLocation();
 
     if (status !== 'ready') {
         return (
@@ -32,6 +34,28 @@ function Protected({ children }: { children: JSX.Element }) {
 
     if (!user) {
         return <Navigate to="/auth" replace />;
+    }
+
+    if (vaultStatus === 'initializing') {
+        return (
+            <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#ecfdf5,_#ffffff)] px-5 py-10 text-slate-900 dark:bg-[radial-gradient(circle_at_top,_#0f172a,_#020617)] dark:text-slate-100">
+                <div className="mx-auto max-w-md rounded-3xl border border-emerald-100 bg-white/90 p-6 text-sm text-slate-600 shadow-sm dark:border-emerald-800/60 dark:bg-slate-900/80">
+                    Entsperre den Vault…
+                </div>
+            </div>
+        );
+    }
+
+    const path = location.pathname;
+    const isVaultRoute = path.startsWith('/vault/unlock') || path.startsWith('/vault/setup');
+    const hasVault =
+        Boolean(user.vault?.encrypted_dek) &&
+        Boolean(user.vault?.dek_iv) &&
+        Boolean(user.vault?.kdf_salt) &&
+        Boolean(user.vault?.kdf_params);
+
+    if (vaultStatus !== 'unlocked' && !isVaultRoute) {
+        return <Navigate to={hasVault ? '/vault/unlock' : '/vault/setup'} replace />;
     }
 
     return children;

@@ -18,6 +18,7 @@ function formatLocalDate(date: Date): string {
 export function CalendarScreen() {
     const navigate = useNavigate();
     const vaultStatus = useVaultStore((state) => state.status);
+    const decryptEntry = useVaultStore((state) => state.decryptEntry);
     const [entries, setEntries] = useState<Record<number, boolean>>({});
     const [loading, setLoading] = useState(false);
     const [empty, setEmpty] = useState(false);
@@ -38,31 +39,56 @@ export function CalendarScreen() {
             return;
         }
         setLoading(true);
-        listEntries({ start: monthStart, end: monthEnd })
-            .then((items) => {
+        const load = async () => {
+            try {
+                const items = await listEntries({ start: monthStart, end: monthEnd });
                 const map: Record<number, boolean> = {};
-                if (items.length === 0) {
-                    setEmpty(true);
-                } else {
-                    setEmpty(false);
-                }
-                items.forEach((entry) => {
+                setEmpty(items.length === 0);
+
+                for (const entry of items) {
                     const day = Number(entry.day.split('-')[2]);
-                    if (!Number.isNaN(day)) {
-                        const kind = entry.aad && typeof entry.aad === 'object' && 'kind' in entry.aad
+                    if (Number.isNaN(day)) {
+                        continue;
+                    }
+
+                    const kind =
+                        entry.aad && typeof entry.aad === 'object' && 'kind' in entry.aad
                             ? (entry.aad as { kind?: string }).kind
                             : null;
-                        if (kind !== 'times') {
+
+                    if (kind === 'times') {
+                        continue;
+                    }
+
+                    if (kind === 'entry') {
+                        map[day] = true;
+                        continue;
+                    }
+
+                    try {
+                        const decrypted = await decryptEntry<unknown>({
+                            ciphertext: entry.ciphertext,
+                            iv: entry.iv,
+                        });
+                        if (isMeaningfulEntry(decrypted)) {
                             map[day] = true;
                         }
+                    } catch {
+                        // ignore decrypt errors in calendar
                     }
-                });
+                }
+
                 setEntries(map);
                 setStreak(calculateStreak(items));
-            })
-            .catch(() => setError('Kalender konnte nicht geladen werden.'))
-            .finally(() => setLoading(false));
-    }, [monthEnd, monthStart, vaultStatus]);
+            } catch {
+                setError('Kalender konnte nicht geladen werden.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void load();
+    }, [monthEnd, monthStart, vaultStatus, decryptEntry]);
 
     return (
         <AppShell title="Kalender">
@@ -150,4 +176,63 @@ function calculateStreak(entries: { day: string }[]): number {
         current = d.toISOString().slice(0, 10);
     }
     return streak;
+}
+
+function isMeaningfulEntry(payload: unknown): boolean {
+    if (!payload || typeof payload !== 'object') return false;
+    const data = payload as {
+        mood?: number;
+        fasted?: boolean;
+        text?: string;
+        menstruation?: boolean;
+        quran?: { amount?: number; pagesFrom?: number; pagesTo?: number; surahRanges?: unknown[] };
+        meals?: { suhoor?: boolean; iftar?: boolean };
+        duaDone?: boolean;
+        charityGiven?: boolean;
+        prayers?: {
+            fajr?: { fard?: string; sunnahBefore?: boolean; dhikrAfter?: boolean };
+            dhuhr?: { fard?: string; sunnahBefore?: boolean[]; sunnahAfter?: boolean; dhikrAfter?: boolean };
+            asr?: { fard?: string; dhikrAfter?: boolean };
+            maghrib?: { fard?: string; sunnahAfter?: boolean; dhikrAfter?: boolean };
+            isha?: { fard?: string; sunnahAfter?: boolean; dhikrAfter?: boolean };
+            witr?: number;
+            taraweeh?: number;
+        };
+    };
+
+    if (typeof data.text === 'string' && data.text.trim() !== '') return true;
+    if (typeof data.mood === 'number' && data.mood !== 3) return true;
+    if (data.fasted) return true;
+    if (data.menstruation) return true;
+    if (data.duaDone || data.charityGiven) return true;
+    if (data.meals?.suhoor || data.meals?.iftar) return true;
+    if (data.quran) {
+        if ((data.quran.amount ?? 0) > 0) return true;
+        if ((data.quran.pagesFrom ?? 0) > 0 || (data.quran.pagesTo ?? 0) > 0) return true;
+        if (Array.isArray(data.quran.surahRanges) && data.quran.surahRanges.length > 0) return true;
+    }
+    if (data.prayers) {
+        const fardStatuses = [
+            data.prayers.fajr?.fard,
+            data.prayers.dhuhr?.fard,
+            data.prayers.asr?.fard,
+            data.prayers.maghrib?.fard,
+            data.prayers.isha?.fard,
+        ];
+        if (fardStatuses.some((status) => status && status !== 'none')) return true;
+        if (data.prayers.fajr?.sunnahBefore) return true;
+        if (data.prayers.dhuhr?.sunnahBefore?.some(Boolean)) return true;
+        if (data.prayers.dhuhr?.sunnahAfter) return true;
+        if (data.prayers.maghrib?.sunnahAfter) return true;
+        if (data.prayers.isha?.sunnahAfter) return true;
+        if (data.prayers.fajr?.dhikrAfter) return true;
+        if (data.prayers.dhuhr?.dhikrAfter) return true;
+        if (data.prayers.asr?.dhikrAfter) return true;
+        if (data.prayers.maghrib?.dhikrAfter) return true;
+        if (data.prayers.isha?.dhikrAfter) return true;
+        if ((data.prayers.witr ?? 0) > 0) return true;
+        if ((data.prayers.taraweeh ?? 0) > 0) return true;
+    }
+
+    return false;
 }

@@ -8,10 +8,9 @@ RUN npm run build
 
 FROM composer:2 AS composer-builder
 WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
+ENV COMPOSER_ALLOW_SUPERUSER=1
 COPY . .
-RUN composer dump-autoload --classmap-authoritative --no-dev
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
 FROM php:8.3-fpm-alpine AS app
 WORKDIR /var/www/html

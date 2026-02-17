@@ -1,7 +1,11 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Calendar, Home, Settings, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../lib/auth-store';
+
+type BeforeInstallPromptEvent = Event & {
+    prompt: () => Promise<void>;
+};
 
 const navItems = [
     { to: '/today', label: 'Heute', icon: Home },
@@ -14,12 +18,56 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
     const status = useAuthStore((state) => state.status);
+    const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+    const [showPwaHint, setShowPwaHint] = useState(false);
+
+    const isStandalone = useMemo(() => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(display-mode: standalone)').matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    }, []);
+
+    const isIos = useMemo(() => {
+        if (typeof window === 'undefined') return false;
+        return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    }, []);
 
     useEffect(() => {
         if (status === 'ready' && !user) {
             navigate('/auth', { replace: true });
         }
     }, [navigate, status, user]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (isStandalone) return;
+        if (localStorage.getItem('deenify_pwa_hint_dismissed') === '1') return;
+
+        const handler = (event: Event) => {
+            event.preventDefault();
+            setInstallPrompt(event as BeforeInstallPromptEvent);
+            setShowPwaHint(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handler as EventListener);
+        if (isIos) {
+            setShowPwaHint(true);
+        }
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handler as EventListener);
+        };
+    }, [isIos, isStandalone]);
+
+    async function handleInstallClick() {
+        if (!installPrompt) return;
+        await installPrompt.prompt();
+        setInstallPrompt(null);
+    }
+
+    function handleDismissHint() {
+        localStorage.setItem('deenify_pwa_hint_dismissed', '1');
+        setShowPwaHint(false);
+    }
 
     useEffect(() => {
         if (!('visualViewport' in window)) {
@@ -59,6 +107,40 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
                 </div>
             </header>
             <main className="mx-auto w-full max-w-md px-5 pb-28 pt-6 animate-[fadein_500ms_ease-out]">
+                {showPwaHint ? (
+                    <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs text-emerald-800">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-2">
+                                <p className="text-sm font-semibold text-emerald-800">Als App nutzen</p>
+                                {isIos ? (
+                                    <p>
+                                        Tippe unten auf <span className="font-semibold">Teilen</span> und wähle
+                                        <span className="font-semibold"> „Zum Home‑Bildschirm“</span>, um Deenify wie eine
+                                        App zu öffnen.
+                                    </p>
+                                ) : (
+                                    <p>Installiere Deenify als PWA für schnelleren Zugriff und Offline‑Modus.</p>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleDismissHint}
+                                className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] text-emerald-700"
+                            >
+                                Später
+                            </button>
+                        </div>
+                        {!isIos && installPrompt ? (
+                            <button
+                                type="button"
+                                onClick={handleInstallClick}
+                                className="mt-3 w-full rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white"
+                            >
+                                Jetzt installieren
+                            </button>
+                        ) : null}
+                    </div>
+                ) : null}
                 {children}
             </main>
             <nav className="app-bottom-nav fixed bottom-0 left-0 right-0 border-t border-slate-200/60 bg-white/90 backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/90">

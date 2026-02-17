@@ -1,5 +1,5 @@
-const CACHE_NAME = 'deenify-v2';
-const APP_SHELL = ['/', '/manifest.webmanifest', '/apple-touch-icon.png'];
+const CACHE_NAME = 'deenify-v3';
+const APP_SHELL = ['/manifest.webmanifest', '/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -27,7 +27,10 @@ self.addEventListener('fetch', (event) => {
             fetch(event.request)
                 .then((response) => {
                     const copy = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
+                    if (event.request.url.endsWith('/')) {
+                        return response;
+                    }
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
                     return response;
                 })
                 .catch(() => caches.match('/')),

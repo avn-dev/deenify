@@ -33,7 +33,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
     if (!response.ok) {
         let payload: ApiError = { message: 'Unbekannter Fehler.' };
         try {
-            payload = await response.json();
+            payload = await parseJsonResponse<ApiError>(response);
         } catch (error) {
             // ignore json parse errors
         }
@@ -44,7 +44,77 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
         return {} as T;
     }
 
-    return (await response.json()) as T;
+    return await parseJsonResponse<T>(response);
+}
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+    const text = await response.text();
+    if (!text.trim()) {
+        return {} as T;
+    }
+    try {
+        return JSON.parse(text) as T;
+    } catch {
+        const extracted = extractLastJson(text);
+        if (extracted !== null) {
+            return extracted as T;
+        }
+        throw new Error('Invalid JSON response');
+    }
+}
+
+function extractLastJson(text: string): unknown | null {
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    let start = -1;
+    let lastSegment: string | null = null;
+
+    for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+        if (inString) {
+            if (escaped) {
+                escaped = false;
+            } else if (ch === '\\') {
+                escaped = true;
+            } else if (ch === '"') {
+                inString = false;
+            }
+            continue;
+        }
+
+        if (ch === '"') {
+            inString = true;
+            continue;
+        }
+
+        if (ch === '{') {
+            if (depth === 0) {
+                start = i;
+            }
+            depth += 1;
+            continue;
+        }
+
+        if (ch === '}') {
+            if (depth > 0) {
+                depth -= 1;
+                if (depth === 0 && start !== -1) {
+                    lastSegment = text.slice(start, i + 1);
+                }
+            }
+        }
+    }
+
+    if (!lastSegment) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(lastSegment) as unknown;
+    } catch {
+        return null;
+    }
 }
 
 function getCookie(name: string): string | null {

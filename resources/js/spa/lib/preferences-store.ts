@@ -5,6 +5,7 @@ import { useVaultStore } from './vault-store';
 export type Preferences = {
     theme: 'system' | 'light' | 'dark';
     autoLockMinutes: number;
+    ramadanStart: string;
 };
 
 type PreferencesState = {
@@ -19,6 +20,7 @@ type PreferencesState = {
 const defaultPreferences: Preferences = {
     theme: 'system',
     autoLockMinutes: 15,
+    ramadanStart: '2026-02-17',
 };
 
 function applyTheme(theme: Preferences['theme']) {
@@ -50,10 +52,11 @@ export const usePreferencesStore = create<PreferencesState>((set, get) => ({
                 useVaultStore.getState().setAutoLockMinutes(defaultPreferences.autoLockMinutes);
                 return;
             }
-            const preferences = await useVaultStore.getState().decryptEntry<Preferences>(record);
-            set({ preferences, status: 'ready' });
-            applyTheme(preferences.theme);
-            useVaultStore.getState().setAutoLockMinutes(preferences.autoLockMinutes);
+            const preferences = await useVaultStore.getState().decryptEntry<Partial<Preferences>>(record);
+            const merged = { ...defaultPreferences, ...preferences };
+            set({ preferences: merged, status: 'ready' });
+            applyTheme(merged.theme);
+            useVaultStore.getState().setAutoLockMinutes(merged.autoLockMinutes);
         } catch (error) {
             const message = (error as { message?: string }).message ?? 'Einstellungen konnten nicht geladen werden.';
             set({ status: 'error', error: message });

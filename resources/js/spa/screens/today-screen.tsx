@@ -5,6 +5,7 @@ import { useAuthStore } from '../lib/auth-store';
 import { useVaultStore } from '../lib/vault-store';
 import { createEntry, listEntries, updateEntry } from '../lib/api';
 import { useProfileStore } from '../lib/profile-store';
+import { usePreferencesStore } from '../lib/preferences-store';
 import { Frown, Meh, Smile, SmilePlus, Laugh } from 'lucide-react';
 
 type EntryData = {
@@ -56,6 +57,7 @@ export function TodayScreen() {
     const encryptEntry = useVaultStore((state) => state.encryptEntry);
     const decryptEntry = useVaultStore((state) => state.decryptEntry);
     const profile = useProfileStore((state) => state.profile);
+    const preferences = usePreferencesStore((state) => state.preferences);
     const [entryId, setEntryId] = useState<string | null>(null);
     const [isEmpty, setIsEmpty] = useState(true);
     const [loading, setLoading] = useState(true);
@@ -80,10 +82,14 @@ export function TodayScreen() {
         () => computeFastingDuration(data.night.fajr, data.night.maghrib),
         [data.night.fajr, data.night.maghrib],
     );
-    const oddNightInfo = useMemo(() => computeOddNightInfo(entryDate, data.night.maghrib), [entryDate, data.night.maghrib]);
-    const ramadanDayLabel = useMemo(() => computeRamadanNightLabel(entryDate), [entryDate]);
-    const fastingDayLabel = useMemo(() => computeFastingDayLabel(entryDate), [entryDate]);
-    const fastingAllowed = useMemo(() => isFastingAllowed(entryDate), [entryDate]);
+    const ramadanStart = preferences.ramadanStart ?? '2026-02-17';
+    const oddNightInfo = useMemo(
+        () => computeOddNightInfo(entryDate, data.night.maghrib, ramadanStart),
+        [entryDate, data.night.maghrib, ramadanStart],
+    );
+    const ramadanDayLabel = useMemo(() => computeRamadanNightLabel(entryDate, ramadanStart), [entryDate, ramadanStart]);
+    const fastingDayLabel = useMemo(() => computeFastingDayLabel(entryDate, ramadanStart), [entryDate, ramadanStart]);
+    const fastingAllowed = useMemo(() => isFastingAllowed(entryDate, ramadanStart), [entryDate, ramadanStart]);
 
     useEffect(() => {
         if (authStatus !== 'ready') {
@@ -1276,9 +1282,8 @@ function computeFastingDuration(fajr: string, maghrib: string) {
     return `${hours}h ${String(minutes).padStart(2, '0')}m`;
 }
 
-function computeOddNightInfo(entryDate: string, maghrib: string) {
+function computeOddNightInfo(entryDate: string, maghrib: string, ramadanStart: string) {
     if (!maghrib || !isValidDateString(entryDate)) return null;
-    const ramadanStart = '2026-02-17';
     const dayNumber = dayDiff(ramadanStart, entryDate) + 1;
     if (dayNumber < 1 || dayNumber > 30) return null;
     const nightNumber = dayNumber + 1;
@@ -1300,9 +1305,8 @@ function dayDiff(start: string, end: string) {
     return Math.floor(diff / (24 * 60 * 60 * 1000));
 }
 
-function computeRamadanNightLabel(entryDate: string) {
+function computeRamadanNightLabel(entryDate: string, ramadanStart: string) {
     if (!isValidDateString(entryDate)) return null;
-    const ramadanStart = '2026-02-17';
     const dayNumber = dayDiff(ramadanStart, entryDate) + 1;
     if (dayNumber < 1 || dayNumber > 30) return null;
     if (dayNumber === 1) return '1. Ramadan';
@@ -1310,12 +1314,12 @@ function computeRamadanNightLabel(entryDate: string) {
     return `${dayNumber - 1}. / ${dayNumber}. Ramadan`;
 }
 
-function computeFastingDayLabel(entryDate: string) {
+function computeFastingDayLabel(entryDate: string, ramadanStart: string) {
     if (!isValidDateString(entryDate)) return null;
-    const fastingStart = '2026-02-18';
+    const fastingStart = addDays(ramadanStart, 1);
     const fastingDay = dayDiff(fastingStart, entryDate) + 1;
     if (fastingDay < 1 || fastingDay > 30) {
-        if (entryDate === '2026-02-17') {
+        if (entryDate === ramadanStart) {
             return 'Heute beginnt Ramadan (ab Maghrib). Fasten startet morgen.';
         }
         return null;
@@ -1323,9 +1327,9 @@ function computeFastingDayLabel(entryDate: string) {
     return `Fasten‑Tag ${fastingDay}`;
 }
 
-function isFastingAllowed(entryDate: string) {
+function isFastingAllowed(entryDate: string, ramadanStart: string) {
     if (!isValidDateString(entryDate)) return true;
-    return entryDate >= '2026-02-18';
+    return entryDate >= addDays(ramadanStart, 1);
 }
 const SURAH_OPTIONS = [
     { number: 1, name: 'Al-Fatihah' },

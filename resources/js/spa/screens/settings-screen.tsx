@@ -41,7 +41,7 @@ export function SettingsScreen() {
     const [exportStatus, setExportStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
     const [exportError, setExportError] = useState<string | null>(null);
     // Nacht-Zeiten wurden entfernt.
-    const ramadanStart = '2026-02-17';
+    const ramadanStart = preferences.ramadanStart ?? '2026-02-17';
     const ramadanEnd = addDays(ramadanStart, 29);
     const [ramadanDays, setRamadanDays] = useState<{ date: string; fajr: string; maghrib: string }[]>([]);
     const [ramadanSaving, setRamadanSaving] = useState(false);
@@ -460,9 +460,19 @@ export function SettingsScreen() {
                 <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
                     <h2 className="text-lg font-semibold">Ramadan‑Zeiten (pro Tag)</h2>
                     <p className="mt-2 text-xs text-slate-500">
-                        Ramadan startet am 17.02.2026 (ab Maghrib) und umfasst 30 Tage. Trage pro Tag Fajr und Maghrib
-                        ein. Diese Zeiten werden pro Tag gespeichert.
+                        Wähle hier den Ramadan‑Beginn (Maghrib des Tages). Das beeinflusst die Tag‑Labels, Fasten‑Tage
+                        und die Nacht‑Berechnung. Danach trage pro Tag Fajr und Maghrib ein. Diese Zeiten werden pro Tag gespeichert.
                     </p>
+                    <label className="mt-4 flex flex-col gap-2 text-xs text-slate-600">
+                        Ramadan‑Beginn (Maghrib‑Datum)
+                        <input
+                            type="date"
+                            value={ramadanStart}
+                            onChange={(event) => updatePreferences({ ramadanStart: event.target.value })}
+                            disabled={vaultStatus !== 'unlocked' || preferencesStatus === 'loading'}
+                            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+                        />
+                    </label>
                     <p className="mt-2 text-xs text-slate-500">
                         Tipp: Du kannst die Zeiten aus Pillars oder Mawaqit übernehmen.
                         <span className="ml-1">
@@ -503,7 +513,7 @@ export function SettingsScreen() {
                                     >
                                         <div className="grid gap-1 text-slate-600">
                                             <span>
-                                                {formatRamadanNightLabel(row.date)} ({formatShortDate(row.date)})
+                                                {formatRamadanNightLabel(row.date, ramadanStart)} ({formatShortDate(row.date)})
                                             </span>
                                         </div>
                                         <input
@@ -727,15 +737,13 @@ function formatShortDate(dateString: string) {
     return `${day}.${month}.`;
 }
 
-function formatRamadanDayLabel(dateString: string) {
-    const ramadanStart = '2026-02-17';
+function formatRamadanDayLabel(dateString: string, ramadanStart: string) {
     const dayNumber = dayDiff(ramadanStart, dateString) + 1;
     if (dayNumber < 1 || dayNumber > 30) return dateString;
     return `${dayNumber}. Ramadan`;
 }
 
-function formatRamadanNightLabel(dateString: string) {
-    const ramadanStart = '2026-02-17';
+function formatRamadanNightLabel(dateString: string, ramadanStart: string) {
     const dayNumber = dayDiff(ramadanStart, dateString) + 1;
     if (dayNumber < 1 || dayNumber > 30) return dateString;
     if (dayNumber === 1) {

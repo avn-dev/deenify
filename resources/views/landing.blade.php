@@ -12,6 +12,16 @@
         <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#10b981">
         @vite(['resources/css/app.css'])
+        <script>
+            (function () {
+                const isStandalone =
+                    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+                    window.navigator.standalone === true;
+                if (isStandalone) {
+                    window.location.replace('/today');
+                }
+            })();
+        </script>
     </head>
     <body class="min-h-screen bg-[radial-gradient(circle_at_top,_#ecfdf5,_#ffffff)] text-slate-900">
         <main class="mx-auto w-full max-w-5xl px-6 py-12 md:py-16">

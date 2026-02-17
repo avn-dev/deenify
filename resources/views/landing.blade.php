@@ -29,13 +29,13 @@
                 </div>
                 <div class="flex flex-wrap gap-3">
                     <a
-                        href="/today"
+                        href="/auth"
                         class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white"
                     >
                         App öffnen
                     </a>
                     <a
-                        href="/auth"
+                        href="/auth?mode=register"
                         class="rounded-full border border-emerald-200 bg-white px-5 py-2 text-sm font-semibold text-emerald-700"
                     >
                         Konto erstellen
@@ -121,16 +121,10 @@
                 </div>
                 <div class="flex gap-3">
                     <a
-                        href="/today"
+                        href="/auth"
                         class="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white"
                     >
                         Jetzt starten
-                    </a>
-                    <a
-                        href="mailto:feedback@deenify.de"
-                        class="rounded-full border border-emerald-200 bg-white px-5 py-2 text-sm font-semibold text-emerald-700"
-                    >
-                        Feedback senden
                     </a>
                 </div>
             </section>

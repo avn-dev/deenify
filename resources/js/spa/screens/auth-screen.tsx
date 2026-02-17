@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../lib/auth-store';
 import type { ApiError } from '../lib/api';
 import { useProfileStore } from '../lib/profile-store';
@@ -7,12 +7,14 @@ import { Mars, Venus } from 'lucide-react';
 
 export function AuthScreen() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const login = useAuthStore((state) => state.login);
     const register = useAuthStore((state) => state.register);
     const status = useAuthStore((state) => state.status);
     const authError = useAuthStore((state) => state.error);
     const setPendingProfile = useProfileStore((state) => state.setPendingProfile);
-    const [mode, setMode] = useState<'login' | 'register'>('login');
+    const initialMode = searchParams.get('mode') === 'register' ? 'register' : 'login';
+    const [mode, setMode] = useState<'login' | 'register'>(initialMode);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');

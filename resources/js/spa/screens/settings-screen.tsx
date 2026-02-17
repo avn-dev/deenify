@@ -415,7 +415,7 @@ export function SettingsScreen() {
                 <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
                     <h2 className="text-lg font-semibold">Präferenzen</h2>
                     <div className="mt-4 space-y-3 text-sm">
-                        <label className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
+                        <label className="flex flex-col gap-3 rounded-2xl border border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             Theme
                             <select
                                 disabled={vaultStatus !== 'unlocked' || preferencesStatus === 'loading'}
@@ -423,14 +423,14 @@ export function SettingsScreen() {
                                 onChange={(event) =>
                                     updatePreferences({ theme: event.target.value as typeof preferences.theme })
                                 }
-                                className="rounded-lg border border-slate-200 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+                                className="w-full rounded-lg border border-slate-200 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900 sm:w-40"
                             >
                                 <option value="system">System</option>
                                 <option value="light">Hell</option>
                                 <option value="dark">Dunkel</option>
                             </select>
                         </label>
-                        <label className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
+                        <label className="flex flex-col gap-3 rounded-2xl border border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                             Auto‑Lock
                             <select
                                 disabled={vaultStatus !== 'unlocked' || preferencesStatus === 'loading'}
@@ -438,7 +438,7 @@ export function SettingsScreen() {
                                 onChange={(event) =>
                                     updatePreferences({ autoLockMinutes: Number(event.target.value) })
                                 }
-                                className="rounded-lg border border-slate-200 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+                                className="w-full rounded-lg border border-slate-200 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900 sm:w-40"
                             >
                                 {autoLockOptions.map((minutes) => (
                                     <option key={minutes} value={minutes}>

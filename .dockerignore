@@ -1,0 +1,16 @@
+/.git
+/node_modules
+/vendor
+/storage/logs
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/views
+/storage/framework/testing
+/.env
+/.env.*
+/certs
+/Caddyfile
+/tests
+/.vscode
+/.idea
+/.DS_Store

@@ -1,5 +1,5 @@
 const CACHE_NAME = 'deenify-v2';
-const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/apple-touch-icon.png'];
+const APP_SHELL = ['/', '/manifest.webmanifest', '/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();

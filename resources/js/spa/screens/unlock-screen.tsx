@@ -83,7 +83,7 @@ export function UnlockScreen() {
                                     disabled={deviceLoading}
                                     className="w-full rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 disabled:opacity-60 dark:border-emerald-800/60 dark:bg-emerald-900/30 dark:text-emerald-200"
                                 >
-                                    {deviceLoading ? 'Face ID…' : 'Mit Face ID entsperren'}
+                                    {deviceLoading ? 'Geräte‑Entsperrung…' : 'Mit Geräte‑Entsperrung entsperren'}
                                 </button>
                             ) : null}
                             <input

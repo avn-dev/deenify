@@ -359,9 +359,10 @@ export function SettingsScreen() {
                 </div>
 
                 <div className="rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm dark:border-emerald-800/60 dark:bg-slate-900/80">
-                    <h3 className="text-sm font-semibold text-slate-700">Face ID / Passkey</h3>
+                    <h3 className="text-sm font-semibold text-slate-700">Geräte‑Entsperrung</h3>
                     <p className="mt-2 text-xs text-slate-500">
-                        Optional. Nutzt die Gerätesicherheit (Face ID/Touch ID), um den Vault schneller zu entsperren.
+                        Optional. Nutzt die Gerätesicherheit (Face ID, Touch ID, Windows Hello oder Passkey), um den
+                        Vault schneller zu entsperren. Funktioniert nur auf diesem Gerät.
                     </p>
                     {deviceSupported ? (
                         <div className="mt-4 space-y-3">
@@ -371,7 +372,7 @@ export function SettingsScreen() {
                                     onClick={handleDisableDeviceUnlock}
                                     className="w-full rounded-2xl border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-800/60 dark:text-emerald-200"
                                 >
-                                    Face ID deaktivieren
+                                    Geräte‑Entsperrung deaktivieren
                                 </button>
                             ) : (
                                 <button
@@ -380,12 +381,12 @@ export function SettingsScreen() {
                                     disabled={deviceStatus === 'loading' || vaultStatus !== 'unlocked'}
                                     className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
                                 >
-                                    {deviceStatus === 'loading' ? 'Aktivieren…' : 'Face ID aktivieren'}
+                                    {deviceStatus === 'loading' ? 'Aktivieren…' : 'Geräte‑Entsperrung aktivieren'}
                                 </button>
                             )}
                             {vaultStatus !== 'unlocked' ? (
                                 <p className="text-xs text-amber-700">
-                                    Entsperre zuerst deinen Vault, um Face ID einzurichten.
+                                    Entsperre zuerst deinen Vault, um die Geräte‑Entsperrung einzurichten.
                                 </p>
                             ) : null}
                         </div>

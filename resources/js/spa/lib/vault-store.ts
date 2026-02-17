@@ -25,6 +25,7 @@ type VaultState = {
     autoLockMinutes: number;
     initVault: (masterPassword: string) => Promise<void>;
     unlock: (masterPassword: string, user: UserPayload) => Promise<void>;
+    unlockWithDek: (dek: CryptoKey, params: KdfParams) => void;
     lock: () => void;
     setAutoLockMinutes: (minutes: number) => void;
     encryptEntry: (data: unknown) => Promise<{ ciphertext: string; iv: string }>;
@@ -188,6 +189,11 @@ export const useVaultStore = create<VaultState>((set, get) => ({
                 set({ status: 'error', error: 'Master‑Passwort ist ungültig.' });
             }
         }
+    },
+    unlockWithDek: (dek, params) => {
+        set({ status: 'unlocked', dek, kdfParams: params, error: null });
+        scheduleAutoLock(get().autoLockMinutes, get().lock);
+        void persistDevDek(dek, get().autoLockMinutes);
     },
     lock: () => {
         scheduleAutoLock(0, () => null);

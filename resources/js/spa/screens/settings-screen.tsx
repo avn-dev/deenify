@@ -7,6 +7,12 @@ import { buildPbkdf2Params, formatError, deriveKey, unwrapKey, wrapKey, type Kdf
 import { usePreferencesStore } from '../lib/preferences-store';
 import { useProfileStore } from '../lib/profile-store';
 import { useVaultStore } from '../lib/vault-store';
+import {
+    clearDeviceUnlock,
+    enableDeviceUnlock,
+    hasDeviceUnlockConfig,
+    isDeviceUnlockSupported,
+} from '../lib/device-unlock';
 
 export function SettingsScreen() {
     const navigate = useNavigate();
@@ -41,6 +47,10 @@ export function SettingsScreen() {
     const [ramadanSaving, setRamadanSaving] = useState(false);
     const [ramadanError, setRamadanError] = useState<string | null>(null);
     const [ramadanSuccess, setRamadanSuccess] = useState<string | null>(null);
+    const [deviceSupported, setDeviceSupported] = useState(false);
+    const [deviceEnabled, setDeviceEnabled] = useState(false);
+    const [deviceStatus, setDeviceStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
+    const [deviceError, setDeviceError] = useState<string | null>(null);
 
     useEffect(() => {
         if (vaultStatus === 'unlocked' && preferencesStatus === 'idle') {
@@ -48,12 +58,45 @@ export function SettingsScreen() {
         }
     }, [loadPreferences, preferencesStatus, vaultStatus]);
 
+    useEffect(() => {
+        void (async () => {
+            const supported = await isDeviceUnlockSupported();
+            setDeviceSupported(supported);
+            setDeviceEnabled(user ? hasDeviceUnlockConfig(user.id) : false);
+        })();
+    }, [user]);
+
     // Nacht-Zeiten Load entfernt.
 
     async function handleLogout() {
         await logout();
         lock();
         navigate('/auth', { replace: true });
+    }
+
+    async function handleEnableDeviceUnlock() {
+        if (!user || !dek) {
+            setDeviceStatus('error');
+            setDeviceError('Bitte entsperre zuerst deinen Vault.');
+            return;
+        }
+        setDeviceStatus('loading');
+        setDeviceError(null);
+        try {
+            await enableDeviceUnlock(dek, user);
+            setDeviceEnabled(true);
+            setDeviceStatus('success');
+        } catch (error) {
+            setDeviceStatus('error');
+            setDeviceError(error instanceof Error ? error.message : 'Face ID konnte nicht aktiviert werden.');
+        }
+    }
+
+    function handleDisableDeviceUnlock() {
+        clearDeviceUnlock();
+        setDeviceEnabled(false);
+        setDeviceStatus('idle');
+        setDeviceError(null);
     }
 
     async function handleRotate(event: React.FormEvent<HTMLFormElement>) {
@@ -311,6 +354,47 @@ export function SettingsScreen() {
                                     <option value="male">Männlich</option>
                                 </select>
                             </label>
+                        </div>
+                    ) : null}
+                </div>
+
+                <div className="rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm dark:border-emerald-800/60 dark:bg-slate-900/80">
+                    <h3 className="text-sm font-semibold text-slate-700">Face ID / Passkey</h3>
+                    <p className="mt-2 text-xs text-slate-500">
+                        Optional. Nutzt die Gerätesicherheit (Face ID/Touch ID), um den Vault schneller zu entsperren.
+                    </p>
+                    {deviceSupported ? (
+                        <div className="mt-4 space-y-3">
+                            {deviceEnabled ? (
+                                <button
+                                    type="button"
+                                    onClick={handleDisableDeviceUnlock}
+                                    className="w-full rounded-2xl border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 dark:border-emerald-800/60 dark:text-emerald-200"
+                                >
+                                    Face ID deaktivieren
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleEnableDeviceUnlock}
+                                    disabled={deviceStatus === 'loading' || vaultStatus !== 'unlocked'}
+                                    className="w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                                >
+                                    {deviceStatus === 'loading' ? 'Aktivieren…' : 'Face ID aktivieren'}
+                                </button>
+                            )}
+                            {vaultStatus !== 'unlocked' ? (
+                                <p className="text-xs text-amber-700">
+                                    Entsperre zuerst deinen Vault, um Face ID einzurichten.
+                                </p>
+                            ) : null}
+                        </div>
+                    ) : (
+                        <p className="mt-3 text-xs text-slate-500">Auf diesem Gerät nicht verfügbar.</p>
+                    )}
+                    {deviceError ? (
+                        <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                            {deviceError}
                         </div>
                     ) : null}
                 </div>

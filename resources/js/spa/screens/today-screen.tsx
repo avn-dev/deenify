@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppShell } from '../components/app-shell';
 import { useAuthStore } from '../lib/auth-store';
@@ -61,6 +61,8 @@ export function TodayScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const lastSavedTextRef = useRef('');
+    const saveButtonRef = useRef<HTMLButtonElement | null>(null);
     const [data, setData] = useState<EntryData>(defaultEntry());
 
     const rawDate = searchParams.get('date') ?? '';
@@ -111,8 +113,10 @@ export function TodayScreen() {
                 setNextFajr(nextFajr);
                 const entry = currentEntry;
                 if (!entry) {
+                    const empty = defaultEntry();
                     setEntryId(null);
-                    setData(defaultEntry());
+                    setData(empty);
+                    lastSavedTextRef.current = empty.text ?? '';
                     setIsEmpty(true);
                     return;
                 }
@@ -121,7 +125,9 @@ export function TodayScreen() {
                     ciphertext: entry.ciphertext,
                     iv: entry.iv,
                 });
-                setData(normalizeEntry(decrypted));
+                const normalized = normalizeEntry(decrypted);
+                setData(normalized);
+                lastSavedTextRef.current = normalized.text ?? '';
                 setIsEmpty(false);
             })
             .catch(() => setError('Eintrag konnte nicht geladen werden.'))
@@ -148,12 +154,29 @@ export function TodayScreen() {
                 });
                 setEntryId(created.id);
             }
+            lastSavedTextRef.current = data.text ?? '';
         } catch (error) {
             setError('Eintrag konnte nicht gespeichert werden.');
         } finally {
             setSaving(false);
         }
     }
+
+    const handleTextBlur = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+        if (event.relatedTarget === saveButtonRef.current) {
+            return;
+        }
+        if (vaultStatus !== 'unlocked' || saving || loading) {
+            return;
+        }
+        if (data.text === lastSavedTextRef.current) {
+            return;
+        }
+        if (!entryId && data.text.trim() === '') {
+            return;
+        }
+        void handleSave();
+    };
 
     return (
         <AppShell title="Heute">
@@ -972,12 +995,14 @@ export function TodayScreen() {
                         aria-label="Reflexion"
                         value={data.text}
                         onChange={(event) => setData((current) => ({ ...current, text: event.target.value }))}
+                        onBlur={handleTextBlur}
                         className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-900"
                     />
                     <button
                         type="button"
                         onClick={handleSave}
                         disabled={saving || loading || vaultStatus !== 'unlocked'}
+                        ref={saveButtonRef}
                         className="mt-4 w-full rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
                     >
                         {saving

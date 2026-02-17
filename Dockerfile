@@ -1,5 +1,6 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
+ENV WAYFINDER_SKIP=1
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY resources ./resources

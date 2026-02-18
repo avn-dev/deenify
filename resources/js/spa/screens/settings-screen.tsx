@@ -26,6 +26,8 @@ export function SettingsScreen() {
     const decryptEntry = useVaultStore((state) => state.decryptEntry);
 
     const profile = useProfileStore((state) => state.profile);
+    const profileStatus = useProfileStore((state) => state.status);
+    const profileError = useProfileStore((state) => state.error);
     const saveProfile = useProfileStore((state) => state.saveProfile);
     const preferences = usePreferencesStore((state) => state.preferences);
     const preferencesStatus = usePreferencesStore((state) => state.status);
@@ -51,6 +53,7 @@ export function SettingsScreen() {
     const [deviceEnabled, setDeviceEnabled] = useState(false);
     const [deviceStatus, setDeviceStatus] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
     const [deviceError, setDeviceError] = useState<string | null>(null);
+    const [profileLocalError, setProfileLocalError] = useState<string | null>(null);
 
     useEffect(() => {
         if (vaultStatus === 'unlocked' && preferencesStatus === 'idle') {
@@ -90,6 +93,16 @@ export function SettingsScreen() {
             setDeviceStatus('error');
             setDeviceError(error instanceof Error ? error.message : 'Face ID konnte nicht aktiviert werden.');
         }
+    }
+
+    async function handleGenderChange(event: React.ChangeEvent<HTMLSelectElement>) {
+        const value = event.target.value as 'male' | 'female';
+        setProfileLocalError(null);
+        if (vaultStatus !== 'unlocked') {
+            setProfileLocalError('Bitte entsperre zuerst deinen Vault.');
+            return;
+        }
+        await saveProfile({ gender: value });
     }
 
     function handleDisableDeviceUnlock() {
@@ -341,21 +354,33 @@ export function SettingsScreen() {
                     {user?.email ? (
                         <p className="mt-1 text-xs text-emerald-700">{user.email}</p>
                     ) : null}
-                    {profile?.gender ? (
-                        <div className="mt-3 grid gap-2 text-xs text-emerald-700">
-                            <label className="grid gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-                                Geschlecht ändern
-                                <select
-                                    value={profile.gender}
-                                    onChange={(event) => saveProfile({ gender: event.target.value as 'male' | 'female' })}
-                                    className="rounded-lg border border-emerald-200 px-2 py-1 text-xs dark:border-emerald-800/60 dark:bg-slate-900"
-                                >
-                                    <option value="female">Weiblich</option>
-                                    <option value="male">Männlich</option>
-                                </select>
-                            </label>
-                        </div>
-                    ) : null}
+                    <div className="mt-3 grid gap-2 text-xs text-emerald-700">
+                        <label className="grid gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                            {profile?.gender ? 'Geschlecht ändern' : 'Geschlecht festlegen'}
+                            <select
+                                value={profile?.gender ?? ''}
+                                onChange={handleGenderChange}
+                                disabled={profileStatus === 'loading'}
+                                className="rounded-lg border border-emerald-200 px-2 py-1 text-xs dark:border-emerald-800/60 dark:bg-slate-900"
+                            >
+                                <option value="" disabled>
+                                    Bitte auswählen
+                                </option>
+                                <option value="female">Weiblich</option>
+                                <option value="male">Männlich</option>
+                            </select>
+                        </label>
+                        {profileLocalError ? (
+                            <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                                {profileLocalError}
+                            </div>
+                        ) : null}
+                        {profileError ? (
+                            <div className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                                {profileError}
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
 
                 <div className="rounded-3xl border border-emerald-100 bg-white/80 p-5 shadow-sm dark:border-emerald-800/60 dark:bg-slate-900/80">

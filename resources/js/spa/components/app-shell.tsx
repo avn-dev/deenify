@@ -2,6 +2,8 @@ import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Calendar, Home, Settings, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../lib/auth-store';
+import { useProfileStore } from '../lib/profile-store';
+import { useVaultStore } from '../lib/vault-store';
 
 type BeforeInstallPromptEvent = Event & {
     prompt: () => Promise<void>;
@@ -18,6 +20,8 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
     const navigate = useNavigate();
     const user = useAuthStore((state) => state.user);
     const status = useAuthStore((state) => state.status);
+    const vaultStatus = useVaultStore((state) => state.status);
+    const loadProfileFromUser = useProfileStore((state) => state.loadFromUser);
     const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [showPwaHint, setShowPwaHint] = useState(false);
 
@@ -36,6 +40,13 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
             navigate('/auth', { replace: true });
         }
     }, [navigate, status, user]);
+
+    useEffect(() => {
+        if (!user || vaultStatus !== 'unlocked') {
+            return;
+        }
+        loadProfileFromUser(user).catch(() => null);
+    }, [loadProfileFromUser, user, vaultStatus]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

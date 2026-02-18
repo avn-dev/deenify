@@ -21,12 +21,14 @@ export function AuthScreen() {
     const [gender, setGender] = useState<'male' | 'female' | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const isLoading = status === 'loading';
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setFieldErrors(null);
         setLocalError(null);
+        setSuccessMessage(null);
         try {
             const normalized = username.trim().toLowerCase();
             if (mode === 'login') {
@@ -38,11 +40,16 @@ export function AuthScreen() {
                 }
                 await register({ username: normalized, password, password_confirmation: passwordConfirmation });
                 setPendingProfile({ gender });
+                setSuccessMessage('Konto erstellt. Du wirst jetzt eingeloggt.');
             }
             navigate('/vault/unlock');
         } catch (error) {
             const apiError = error as ApiError;
             setFieldErrors(apiError.errors ?? null);
+            if (mode === 'register') {
+                setLocalError(apiError.message ?? 'Registrierung fehlgeschlagen.');
+                setMode('register');
+            }
         }
     }
 
@@ -150,6 +157,11 @@ export function AuthScreen() {
                         {localError ? (
                             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
                                 {localError}
+                            </div>
+                        ) : null}
+                        {successMessage ? (
+                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
+                                {successMessage}
                             </div>
                         ) : null}
                         <div className="text-center text-xs text-slate-500">

@@ -157,7 +157,7 @@ export function TodayScreen() {
                 setError('Eintrag konnte nicht geladen werden.');
             })
             .finally(() => setLoading(false));
-    }, [decryptEntry, entryDate, vaultStatus]);
+    }, [decryptEntry, entryDate, navigate, nextDate, vaultStatus]);
 
     async function handleSave() {
         setSaving(true);
@@ -180,7 +180,7 @@ export function TodayScreen() {
                 setEntryId(created.id);
             }
             lastSavedTextRef.current = data.text ?? '';
-        } catch (error) {
+        } catch {
             setError('Eintrag konnte nicht gespeichert werden.');
         } finally {
             setSaving(false);

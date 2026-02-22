@@ -103,10 +103,12 @@ export function InsightsScreen() {
         if (vaultStatus !== 'unlocked') {
             return;
         }
-        setLoading(true);
-        setError(null);
-        listEntries({ start: dateRange.start, end: dateRange.end })
-            .then(async (entries) => {
+        let cancelled = false;
+        const load = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const entries = await listEntries({ start: dateRange.start, end: dateRange.end });
                 const decrypted = await Promise.all(
                     entries.map(async (entry) => {
                         const data = await decryptEntry<EntryData>({
@@ -122,9 +124,19 @@ export function InsightsScreen() {
                 setWeek(buildWeekSeries(decrypted));
                 setHeatmap(buildHeatmapSeries(decrypted, 30));
                 setPrayerScore(buildPrayerScore(decrypted.map((item) => item.data)));
-            })
-            .catch(() => setError('Statistiken konnten nicht geladen werden.'))
-            .finally(() => setLoading(false));
+            } catch {
+                setError('Statistiken konnten nicht geladen werden.');
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void Promise.resolve().then(load);
+        return () => {
+            cancelled = true;
+        };
     }, [dateRange.end, dateRange.start, decryptEntry, vaultStatus]);
 
     return (

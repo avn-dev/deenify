@@ -234,7 +234,7 @@ export function SettingsScreen() {
             URL.revokeObjectURL(url);
 
             setExportStatus('success');
-        } catch (error) {
+        } catch {
             setExportStatus('error');
             setExportError('Export konnte nicht erstellt werden.');
         }
@@ -336,7 +336,7 @@ export function SettingsScreen() {
             }
 
             setRamadanSuccess(`Gespeichert für ${ramadanDays.length} Tage.`);
-        } catch (error) {
+        } catch {
             setRamadanError('Ramadan‑Zeiten konnten nicht gespeichert werden.');
         } finally {
             setRamadanSaving(false);
@@ -760,12 +760,6 @@ function formatShortDate(dateString: string) {
     const [year, month, day] = dateString.split('-');
     if (!year || !month || !day) return dateString;
     return `${day}.${month}.`;
-}
-
-function formatRamadanDayLabel(dateString: string, ramadanStart: string) {
-    const dayNumber = dayDiff(ramadanStart, dateString) + 1;
-    if (dayNumber < 1 || dayNumber > 30) return dateString;
-    return `${dayNumber}. Ramadan`;
 }
 
 function formatRamadanNightLabel(dateString: string, ramadanStart: string) {

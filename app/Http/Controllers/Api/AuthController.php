@@ -26,7 +26,9 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json([
             'user' => $this->userPayload($user),
@@ -46,7 +48,9 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json([
             'user' => $this->userPayload($request->user()),
@@ -56,8 +60,10 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json(['status' => 'ok']);
     }

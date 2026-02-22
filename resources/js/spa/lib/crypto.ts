@@ -143,7 +143,7 @@ export async function selectKdfParams(): Promise<KdfParams> {
         const params = buildArgon2Params();
         await deriveKey('probe', params);
         return params;
-    } catch (error) {
+    } catch {
         return buildPbkdf2Params();
     }
 }

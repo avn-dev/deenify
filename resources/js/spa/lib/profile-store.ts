@@ -38,7 +38,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
                 iv: user.profile_iv,
             });
             set({ profile: decrypted, status: 'ready' });
-        } catch (error) {
+        } catch {
             set({ status: 'error', error: 'Profil konnte nicht entschlüsselt werden.' });
         }
     },
@@ -55,7 +55,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
                 profile_iv: encrypted.iv,
             });
             set({ profile, status: 'ready', pendingProfile: null });
-        } catch (error) {
+        } catch {
             set({ status: 'error', error: 'Profil konnte nicht gespeichert werden.' });
         }
     },

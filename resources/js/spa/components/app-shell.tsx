@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Calendar, Home, Settings, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../lib/auth-store';
@@ -23,7 +23,15 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
     const vaultStatus = useVaultStore((state) => state.status);
     const loadProfileFromUser = useProfileStore((state) => state.loadFromUser);
     const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-    const [showPwaHint, setShowPwaHint] = useState(false);
+    const [showPwaHint, setShowPwaHint] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const standalone =
+            window.matchMedia('(display-mode: standalone)').matches ||
+            (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+        if (standalone) return false;
+        if (localStorage.getItem('deenify_pwa_hint_dismissed') === '1') return false;
+        return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    });
 
     const isStandalone = useMemo(() => {
         if (typeof window === 'undefined') return false;
@@ -48,26 +56,23 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
         loadProfileFromUser(user).catch(() => null);
     }, [loadProfileFromUser, user, vaultStatus]);
 
+    const handleBeforeInstallPrompt = useCallback((event: Event) => {
+        event.preventDefault();
+        setInstallPrompt(event as BeforeInstallPromptEvent);
+        setShowPwaHint(true);
+    }, []);
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
         if (isStandalone) return;
         if (localStorage.getItem('deenify_pwa_hint_dismissed') === '1') return;
 
-        const handler = (event: Event) => {
-            event.preventDefault();
-            setInstallPrompt(event as BeforeInstallPromptEvent);
-            setShowPwaHint(true);
-        };
-
-        window.addEventListener('beforeinstallprompt', handler as EventListener);
-        if (isIos) {
-            setShowPwaHint(true);
-        }
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
 
         return () => {
-            window.removeEventListener('beforeinstallprompt', handler as EventListener);
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
         };
-    }, [isIos, isStandalone]);
+    }, [handleBeforeInstallPrompt, isStandalone]);
 
     async function handleInstallClick() {
         if (!installPrompt) return;
@@ -81,7 +86,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
     }
 
     useEffect(() => {
-        if (!('visualViewport' in window)) {
+        if (typeof window === 'undefined' || !('visualViewport' in window)) {
             return;
         }
 

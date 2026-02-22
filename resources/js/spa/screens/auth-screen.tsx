@@ -53,10 +53,6 @@ export function AuthScreen() {
         }
     }
 
-    function handleSocial(provider: 'google' | 'apple') {
-        window.location.href = `/api/auth/${provider}/redirect`;
-    }
-
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#ecfdf5,_#ffffff)] px-5 py-10 text-slate-900 dark:bg-[radial-gradient(circle_at_top,_#0f172a,_#020617)] dark:text-slate-100">
             <div className="mx-auto flex max-w-md flex-col gap-8">

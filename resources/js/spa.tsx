@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import '../css/app.css';
@@ -10,7 +10,6 @@ import { CalendarScreen } from './spa/screens/calendar-screen';
 import { SettingsScreen } from './spa/screens/settings-screen';
 import { AuthCallbackScreen } from './spa/screens/auth-callback-screen';
 import { InsightsScreen } from './spa/screens/insights-screen';
-import { useEffect } from 'react';
 import { useAuthStore } from './spa/lib/auth-store';
 import { usePreferencesStore } from './spa/lib/preferences-store';
 import { useProfileStore } from './spa/lib/profile-store';

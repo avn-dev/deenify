@@ -35,7 +35,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
         let payload: ApiError = { message: 'Unbekannter Fehler.' };
         try {
             payload = await parseJsonResponse<ApiError>(response);
-        } catch (error) {
+        } catch {
             // ignore json parse errors
         }
         payload.status = response.status;

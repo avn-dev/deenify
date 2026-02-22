@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             const user = await apiMe();
             set({ user, status: 'ready' });
-        } catch (error) {
+        } catch {
             set({ user: null, status: 'ready' });
         }
     },

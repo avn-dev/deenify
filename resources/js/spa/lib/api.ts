@@ -1,6 +1,7 @@
 export type ApiError = {
     message: string;
     errors?: Record<string, string[]>;
+    status?: number;
 };
 
 const baseUrl = (import.meta.env.VITE_API_BASE as string) || '';
@@ -37,6 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
         } catch (error) {
             // ignore json parse errors
         }
+        payload.status = response.status;
         throw payload;
     }
 

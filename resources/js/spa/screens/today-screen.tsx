@@ -110,12 +110,18 @@ export function TodayScreen() {
             .then(async (entries) => {
                 const currentEntry = entries.find((item) => item.day === entryDate);
                 const nextEntry = entries.find((item) => item.day === nextDate);
-                const nextFajr = nextEntry
-                    ? (await decryptEntry<EntryData>({
-                          ciphertext: nextEntry.ciphertext,
-                          iv: nextEntry.iv,
-                      }))?.night?.fajr ?? ''
-                    : '';
+                let nextFajr = '';
+                if (nextEntry) {
+                    try {
+                        nextFajr =
+                            (await decryptEntry<EntryData>({
+                                ciphertext: nextEntry.ciphertext,
+                                iv: nextEntry.iv,
+                            }))?.night?.fajr ?? '';
+                    } catch {
+                        nextFajr = '';
+                    }
+                }
                 setNextFajr(nextFajr);
                 const entry = currentEntry;
                 if (!entry) {
@@ -127,16 +133,29 @@ export function TodayScreen() {
                     return;
                 }
                 setEntryId(entry.id);
-                const decrypted = await decryptEntry<EntryData>({
-                    ciphertext: entry.ciphertext,
-                    iv: entry.iv,
-                });
-                const normalized = normalizeEntry(decrypted);
+                let normalized = defaultEntry();
+                try {
+                    const decrypted = await decryptEntry<EntryData>({
+                        ciphertext: entry.ciphertext,
+                        iv: entry.iv,
+                    });
+                    normalized = normalizeEntry(decrypted);
+                } catch {
+                    setError('Eintrag konnte nicht geladen werden.');
+                }
                 setData(normalized);
                 lastSavedTextRef.current = normalized.text ?? '';
                 setIsEmpty(false);
             })
-            .catch(() => setError('Eintrag konnte nicht geladen werden.'))
+            .catch((error) => {
+                const status = (error as { status?: number }).status;
+                if (status === 401 || status === 419) {
+                    setError('Bitte erneut anmelden.');
+                    navigate('/auth', { replace: true });
+                    return;
+                }
+                setError('Eintrag konnte nicht geladen werden.');
+            })
             .finally(() => setLoading(false));
     }, [decryptEntry, entryDate, vaultStatus]);
 

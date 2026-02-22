@@ -2,6 +2,9 @@
 
 Deenify ist eine Mobile‑First Web‑App für verschlüsselte Ramadan‑Einträge. Die Diary‑Inhalte werden **clientseitig** per E2EE verschlüsselt – der Server sieht niemals Klartext.
 
+## Open‑Source & Sicherheit
+Dieses Repo enthält **keine Secrets**. Produktions‑Werte (DB‑Passwörter, `APP_KEY`, OAuth‑Keys) müssen über `.env` oder CI‑Secrets gesetzt werden.
+
 ## Setup (lokal)
 
 ### Voraussetzungen
@@ -42,6 +45,16 @@ APPLE_CLIENT_ID=
 APPLE_CLIENT_SECRET=
 APPLE_REDIRECT_URI=
 ```
+
+## Production (Self‑Hosting)
+Setze deine Secrets in einer `.env` (nicht committen) und starte dann:
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+Wichtig:
+- `APP_KEY` ist **erforderlich**
+- `DB_PASSWORD`/`MYSQL_ROOT_PASSWORD` setzen
+- `SESSION_DOMAIN`, `SANCTUM_STATEFUL_DOMAINS` passend zur Domain setzen
 
 ## Auth
 - Login/Registrierung mit **Benutzername + Passwort**

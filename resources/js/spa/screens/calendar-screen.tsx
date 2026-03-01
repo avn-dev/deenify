@@ -15,6 +15,10 @@ function formatLocalDate(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+function formatMonthLabel(date: Date): string {
+    return date.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
+}
+
 export function CalendarScreen() {
     const navigate = useNavigate();
     const vaultStatus = useVaultStore((state) => state.status);
@@ -25,14 +29,21 @@ export function CalendarScreen() {
     const [streak, setStreak] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const today = useMemo(() => new Date(), []);
+    const [monthCursor, setMonthCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
     const todayDay = today.getDate();
-    const totalDays = daysInMonth(today);
+    const totalDays = daysInMonth(monthCursor);
     const days = Array.from({ length: totalDays }, (_, index) => index + 1);
-    const monthStart = useMemo(() => formatLocalDate(new Date(today.getFullYear(), today.getMonth(), 1)), [today]);
-    const monthEnd = useMemo(
-        () => formatLocalDate(new Date(today.getFullYear(), today.getMonth(), totalDays)),
-        [today, totalDays],
+    const monthStart = useMemo(
+        () => formatLocalDate(new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1)),
+        [monthCursor],
     );
+    const monthEnd = useMemo(
+        () => formatLocalDate(new Date(monthCursor.getFullYear(), monthCursor.getMonth(), totalDays)),
+        [monthCursor, totalDays],
+    );
+    const isCurrentMonth =
+        monthCursor.getFullYear() === today.getFullYear() && monthCursor.getMonth() === today.getMonth();
+    const monthLabel = formatMonthLabel(monthCursor);
 
     useEffect(() => {
         if (vaultStatus !== 'unlocked') {
@@ -99,8 +110,37 @@ export function CalendarScreen() {
                     </div>
                 ) : null}
                 <div className="rounded-3xl border border-slate-200 bg-white/80 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-                    <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
                         <h2 className="text-lg font-semibold">Ramadan 1447</h2>
+                        <p className="text-xs text-slate-500">{monthLabel}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setMonthCursor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))
+                            }
+                            className="rounded-2xl border border-slate-200 px-3 py-1 text-xs"
+                        >
+                            Zurück
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setMonthCursor((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))
+                            }
+                            className="rounded-2xl border border-slate-200 px-3 py-1 text-xs"
+                        >
+                            Weiter
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMonthCursor(new Date(today.getFullYear(), today.getMonth(), 1))}
+                            className="rounded-2xl border border-slate-200 px-3 py-1 text-xs"
+                        >
+                            Dieser Monat
+                        </button>
                         <button
                             type="button"
                             onClick={() => navigate('/today')}
@@ -109,6 +149,7 @@ export function CalendarScreen() {
                             Heute
                         </button>
                     </div>
+                </div>
                     {loading ? (
                         <p className="mt-3 text-xs text-slate-500">Lade Einträge…</p>
                     ) : empty ? (
@@ -127,12 +168,14 @@ export function CalendarScreen() {
                                 key={day}
                                 type="button"
                                 aria-label={`Tag ${day}`}
-                                onClick={() => {
-                                    const date = formatLocalDate(new Date(today.getFullYear(), today.getMonth(), day));
+                            onClick={() => {
+                                    const date = formatLocalDate(
+                                        new Date(monthCursor.getFullYear(), monthCursor.getMonth(), day),
+                                    );
                                     navigate(`/today?date=${date}`);
                                 }}
                                 className={`aspect-square rounded-xl border bg-slate-50 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 ${
-                                    day === todayDay
+                                    isCurrentMonth && day === todayDay
                                         ? 'border-emerald-400 ring-2 ring-emerald-300/60'
                                         : 'border-slate-100'
                                 }`}

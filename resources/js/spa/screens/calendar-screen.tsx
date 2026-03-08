@@ -168,7 +168,7 @@ export function CalendarScreen() {
                                 key={day}
                                 type="button"
                                 aria-label={`Tag ${day}`}
-                            onClick={() => {
+                                onClick={() => {
                                     const date = formatLocalDate(
                                         new Date(monthCursor.getFullYear(), monthCursor.getMonth(), day),
                                     );
@@ -240,6 +240,7 @@ function isMeaningfulEntry(payload: unknown): boolean {
             isha?: { fard?: string; sunnahAfter?: boolean; dhikrAfter?: boolean };
             witr?: number;
             taraweeh?: number;
+            tahajjud?: number;
         };
     };
 
@@ -275,6 +276,7 @@ function isMeaningfulEntry(payload: unknown): boolean {
         if (data.prayers.isha?.dhikrAfter) return true;
         if ((data.prayers.witr ?? 0) > 0) return true;
         if ((data.prayers.taraweeh ?? 0) > 0) return true;
+        if ((data.prayers.tahajjud ?? 0) > 0) return true;
     }
 
     return false;

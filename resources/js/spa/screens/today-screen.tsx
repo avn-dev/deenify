@@ -24,6 +24,7 @@ type EntryData = {
         isha: { fard: FardStatus; sunnahAfter: boolean; dhikrAfter: boolean };
         witr: number;
         taraweeh: number;
+        tahajjud: number;
     };
     text: string;
     menstruation: boolean;
@@ -596,11 +597,11 @@ export function TodayScreen() {
                                         <input
                                             type="number"
                                             min={0}
-                                            max={20}
-                                            step={2}
+                                            max={50}
+                                            step={1}
                                             value={data.prayers.taraweeh}
                                             onChange={(event) => {
-                                                const next = normalizeTaraweehValue(Number(event.target.value));
+                                                const next = normalizeRakatValue(Number(event.target.value));
                                                 setData((current) => ({
                                                     ...current,
                                                     prayers: {
@@ -641,6 +642,81 @@ export function TodayScreen() {
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+                            <div className="grid gap-3 rounded-2xl border border-slate-100 px-4 py-3">
+                                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Tahajjud</p>
+                                <div className="mt-2 grid grid-cols-3 gap-2">
+                                    {[0, 2, 4, 6, 8].map((count) => (
+                                        <button
+                                            key={count}
+                                            type="button"
+                                            aria-pressed={data.prayers.tahajjud === count}
+                                            onClick={() =>
+                                                setData((current) => ({
+                                                    ...current,
+                                                    prayers: {
+                                                        ...current.prayers,
+                                                        tahajjud: count,
+                                                    },
+                                                }))
+                                            }
+                                            className={`rounded-xl border px-2 py-2 text-xs ${
+                                                data.prayers.tahajjud === count
+                                                    ? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-200'
+                                                    : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
+                                            }`}
+                                        >
+                                            {count === 0 ? 'Kein' : `${count} Rakʿāt`}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        aria-pressed={![0, 2, 4, 6, 8].includes(data.prayers.tahajjud)}
+                                        onClick={() =>
+                                            setData((current) => ({
+                                                ...current,
+                                                prayers: {
+                                                    ...current.prayers,
+                                                    tahajjud:
+                                                        current.prayers.tahajjud &&
+                                                        ![0, 2, 4, 6, 8].includes(current.prayers.tahajjud)
+                                                            ? current.prayers.tahajjud
+                                                            : 2,
+                                                },
+                                            }))
+                                        }
+                                        className={`rounded-xl border px-2 py-2 text-xs ${
+                                            ![0, 2, 4, 6, 8].includes(data.prayers.tahajjud)
+                                                ? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-200'
+                                                : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
+                                        }`}
+                                    >
+                                        Custom
+                                    </button>
+                                </div>
+                                {![0, 2, 4, 6, 8].includes(data.prayers.tahajjud) ? (
+                                    <div className="mt-2 flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-xs">
+                                        <span>Eigene Rakʿāt</span>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={50}
+                                            step={1}
+                                            value={data.prayers.tahajjud}
+                                            onChange={(event) => {
+                                                const next = normalizeRakatValue(Number(event.target.value));
+                                                setData((current) => ({
+                                                    ...current,
+                                                    prayers: {
+                                                        ...current.prayers,
+                                                        tahajjud: next,
+                                                    },
+                                                }));
+                                            }}
+                                            className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
+                                        />
+                                    </div>
+                                ) : null}
                             </div>
                     </div>
                 </div>
@@ -1071,6 +1147,7 @@ function defaultEntry(): EntryData {
             isha: { fard: 'none', sunnahAfter: false, dhikrAfter: false },
             witr: 0,
             taraweeh: 0,
+            tahajjud: 0,
         },
     };
 }
@@ -1107,6 +1184,8 @@ function normalizeEntry(data: EntryData): EntryData {
             isha: { ...defaults.prayers.isha, ...data.prayers?.isha },
             witr: typeof data.prayers?.witr === 'number' ? data.prayers.witr : defaults.prayers.witr,
             taraweeh: typeof data.prayers?.taraweeh === 'number' ? data.prayers.taraweeh : defaults.prayers.taraweeh,
+            tahajjud:
+                typeof data.prayers?.tahajjud === 'number' ? data.prayers.tahajjud : defaults.prayers.tahajjud,
         },
     };
 }
@@ -1218,12 +1297,12 @@ function statusLabel(status: FardStatus) {
     }
 }
 
-function normalizeTaraweehValue(value: number) {
+function normalizeRakatValue(value: number) {
     if (!Number.isFinite(value)) return 0;
-    if (value <= 0) return 0;
-    if (value > 20) return 20;
-    if (value % 2 !== 0) return value + 1;
-    return value;
+    const rounded = Math.round(value);
+    if (rounded <= 0) return 0;
+    if (rounded > 50) return 50;
+    return rounded;
 }
 
 function formatLocalDate(date: Date): string {

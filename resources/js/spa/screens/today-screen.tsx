@@ -69,6 +69,8 @@ export function TodayScreen() {
     const [error, setError] = useState<string | null>(null);
     const lastSavedTextRef = useRef('');
     const saveButtonRef = useRef<HTMLButtonElement | null>(null);
+    const taraweehInputRef = useRef<HTMLInputElement | null>(null);
+    const tahajjudInputRef = useRef<HTMLInputElement | null>(null);
     const [data, setData] = useState<EntryData>(defaultEntry());
     const [taraweehCustom, setTaraweehCustom] = useState(
         () => !TARAWEH_PRESETS.includes(defaultEntry().prayers.taraweeh),
@@ -76,6 +78,8 @@ export function TodayScreen() {
     const [tahajjudCustom, setTahajjudCustom] = useState(
         () => !TAHAJJUD_PRESETS.includes(defaultEntry().prayers.tahajjud),
     );
+    const [taraweehCustomValue, setTaraweehCustomValue] = useState<string>('');
+    const [tahajjudCustomValue, setTahajjudCustomValue] = useState<string>('');
 
     const rawDate = searchParams.get('date') ?? '';
     const today = useMemo(() => formatLocalDate(new Date()), []);
@@ -180,6 +184,20 @@ export function TodayScreen() {
             setTahajjudCustom(true);
         }
     }, [data.prayers.tahajjud]);
+
+    useEffect(() => {
+        if (!taraweehCustom) return;
+        if (document.activeElement === taraweehInputRef.current) return;
+        const value = data.prayers.taraweeh;
+        setTaraweehCustomValue(value > 0 ? String(value) : '');
+    }, [data.prayers.taraweeh, taraweehCustom]);
+
+    useEffect(() => {
+        if (!tahajjudCustom) return;
+        if (document.activeElement === tahajjudInputRef.current) return;
+        const value = data.prayers.tahajjud;
+        setTahajjudCustomValue(value > 0 ? String(value) : '');
+    }, [data.prayers.tahajjud, tahajjudCustom]);
 
     async function handleSave() {
         setSaving(true);
@@ -575,6 +593,7 @@ export function TodayScreen() {
                                             onClick={() =>
                                                 setData((current) => {
                                                     setTaraweehCustom(false);
+                                                    setTaraweehCustomValue('');
                                                     return {
                                                         ...current,
                                                         prayers: { ...current.prayers, taraweeh: count },
@@ -599,8 +618,9 @@ export function TodayScreen() {
                                                     current.prayers.taraweeh &&
                                                     !TARAWEH_PRESETS.includes(current.prayers.taraweeh)
                                                         ? current.prayers.taraweeh
-                                                        : 10;
+                                                        : 0;
                                                 setTaraweehCustom(true);
+                                                setTaraweehCustomValue(next > 0 ? String(next) : '');
                                                 return {
                                                     ...current,
                                                     prayers: {
@@ -627,9 +647,14 @@ export function TodayScreen() {
                                             min={0}
                                             max={50}
                                             step={1}
-                                            value={data.prayers.taraweeh}
+                                            value={taraweehCustomValue}
                                             onChange={(event) => {
-                                                const next = normalizeRakatValue(Number(event.target.value));
+                                                const raw = event.target.value;
+                                                setTaraweehCustomValue(raw);
+                                                if (raw === '') {
+                                                    return;
+                                                }
+                                                const next = normalizeRakatValue(Number(raw));
                                                 setData((current) => ({
                                                     ...current,
                                                     prayers: {
@@ -638,6 +663,18 @@ export function TodayScreen() {
                                                     },
                                                 }));
                                             }}
+                                            onBlur={(event) => {
+                                                if (event.target.value === '') {
+                                                    setData((current) => ({
+                                                        ...current,
+                                                        prayers: {
+                                                            ...current.prayers,
+                                                            taraweeh: 0,
+                                                        },
+                                                    }));
+                                                }
+                                            }}
+                                            ref={taraweehInputRef}
                                             className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
                                         />
                                     </div>
@@ -682,6 +719,7 @@ export function TodayScreen() {
                                             onClick={() =>
                                                 setData((current) => {
                                                     setTahajjudCustom(false);
+                                                    setTahajjudCustomValue('');
                                                     return {
                                                         ...current,
                                                         prayers: {
@@ -709,8 +747,9 @@ export function TodayScreen() {
                                                     current.prayers.tahajjud &&
                                                     !TAHAJJUD_PRESETS.includes(current.prayers.tahajjud)
                                                         ? current.prayers.tahajjud
-                                                        : 1;
+                                                        : 0;
                                                 setTahajjudCustom(true);
+                                                setTahajjudCustomValue(next > 0 ? String(next) : '');
                                                 return {
                                                     ...current,
                                                     prayers: {
@@ -737,9 +776,14 @@ export function TodayScreen() {
                                             min={0}
                                             max={50}
                                             step={1}
-                                            value={data.prayers.tahajjud}
+                                            value={tahajjudCustomValue}
                                             onChange={(event) => {
-                                                const next = normalizeRakatValue(Number(event.target.value));
+                                                const raw = event.target.value;
+                                                setTahajjudCustomValue(raw);
+                                                if (raw === '') {
+                                                    return;
+                                                }
+                                                const next = normalizeRakatValue(Number(raw));
                                                 setData((current) => ({
                                                     ...current,
                                                     prayers: {
@@ -748,6 +792,18 @@ export function TodayScreen() {
                                                     },
                                                 }));
                                             }}
+                                            onBlur={(event) => {
+                                                if (event.target.value === '') {
+                                                    setData((current) => ({
+                                                        ...current,
+                                                        prayers: {
+                                                            ...current.prayers,
+                                                            tahajjud: 0,
+                                                        },
+                                                    }));
+                                                }
+                                            }}
+                                            ref={tahajjudInputRef}
                                             className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
                                         />
                                     </div>

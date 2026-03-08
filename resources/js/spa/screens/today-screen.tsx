@@ -49,6 +49,9 @@ type EntryData = {
 
 type FardStatus = 'none' | 'on_time' | 'late' | 'qada' | 'missed';
 
+const TARAWEH_PRESETS = [0, 2, 4, 6, 8];
+const TAHAJJUD_PRESETS = [0, 2, 4, 6, 8];
+
 export function TodayScreen() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -67,6 +70,12 @@ export function TodayScreen() {
     const lastSavedTextRef = useRef('');
     const saveButtonRef = useRef<HTMLButtonElement | null>(null);
     const [data, setData] = useState<EntryData>(defaultEntry());
+    const [taraweehCustom, setTaraweehCustom] = useState(
+        () => !TARAWEH_PRESETS.includes(defaultEntry().prayers.taraweeh),
+    );
+    const [tahajjudCustom, setTahajjudCustom] = useState(
+        () => !TAHAJJUD_PRESETS.includes(defaultEntry().prayers.tahajjud),
+    );
 
     const rawDate = searchParams.get('date') ?? '';
     const today = useMemo(() => formatLocalDate(new Date()), []);
@@ -159,6 +168,18 @@ export function TodayScreen() {
             })
             .finally(() => setLoading(false));
     }, [decryptEntry, entryDate, navigate, nextDate, vaultStatus]);
+
+    useEffect(() => {
+        if (!TARAWEH_PRESETS.includes(data.prayers.taraweeh)) {
+            setTaraweehCustom(true);
+        }
+    }, [data.prayers.taraweeh]);
+
+    useEffect(() => {
+        if (!TAHAJJUD_PRESETS.includes(data.prayers.tahajjud)) {
+            setTahajjudCustom(true);
+        }
+    }, [data.prayers.tahajjud]);
 
     async function handleSave() {
         setSaving(true);
@@ -546,16 +567,19 @@ export function TodayScreen() {
                             <div className="grid gap-3 rounded-2xl border border-slate-100 px-4 py-3">
                                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Tarawih</p>
                                 <div className="mt-2 grid grid-cols-3 gap-2">
-                                    {[0, 2, 4, 6, 8].map((count) => (
+                                    {TARAWEH_PRESETS.map((count) => (
                                         <button
                                             key={count}
                                             type="button"
                                             aria-pressed={data.prayers.taraweeh === count}
                                             onClick={() =>
-                                                setData((current) => ({
-                                                    ...current,
-                                                    prayers: { ...current.prayers, taraweeh: count },
-                                                }))
+                                                setData((current) => {
+                                                    setTaraweehCustom(false);
+                                                    return {
+                                                        ...current,
+                                                        prayers: { ...current.prayers, taraweeh: count },
+                                                    };
+                                                })
                                             }
                                             className={`rounded-xl border px-2 py-2 text-xs ${
                                                 data.prayers.taraweeh === count
@@ -568,22 +592,26 @@ export function TodayScreen() {
                                     ))}
                                     <button
                                         type="button"
-                                        aria-pressed={![0, 2, 4, 6, 8].includes(data.prayers.taraweeh)}
+                                        aria-pressed={taraweehCustom}
                                         onClick={() =>
-                                            setData((current) => ({
-                                                ...current,
-                                                prayers: {
-                                                    ...current.prayers,
-                                                    taraweeh:
-                                                        current.prayers.taraweeh &&
-                                                        ![0, 2, 4, 6, 8].includes(current.prayers.taraweeh)
-                                                            ? current.prayers.taraweeh
-                                                            : 10,
-                                                },
-                                            }))
+                                            setData((current) => {
+                                                const next =
+                                                    current.prayers.taraweeh &&
+                                                    !TARAWEH_PRESETS.includes(current.prayers.taraweeh)
+                                                        ? current.prayers.taraweeh
+                                                        : 10;
+                                                setTaraweehCustom(true);
+                                                return {
+                                                    ...current,
+                                                    prayers: {
+                                                        ...current.prayers,
+                                                        taraweeh: next,
+                                                    },
+                                                };
+                                            })
                                         }
                                         className={`rounded-xl border px-2 py-2 text-xs ${
-                                            ![0, 2, 4, 6, 8].includes(data.prayers.taraweeh)
+                                            taraweehCustom
                                                 ? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-200'
                                                 : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
                                         }`}
@@ -591,7 +619,7 @@ export function TodayScreen() {
                                         Custom
                                     </button>
                                 </div>
-                                {![0, 2, 4, 6, 8].includes(data.prayers.taraweeh) ? (
+                                {taraweehCustom ? (
                                     <div className="mt-2 flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-xs">
                                         <span>Eigene Rakʿāt</span>
                                         <input
@@ -646,19 +674,22 @@ export function TodayScreen() {
                             <div className="grid gap-3 rounded-2xl border border-slate-100 px-4 py-3">
                                 <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Tahajjud</p>
                                 <div className="mt-2 grid grid-cols-3 gap-2">
-                                    {[0, 2, 4, 6, 8].map((count) => (
+                                    {TAHAJJUD_PRESETS.map((count) => (
                                         <button
                                             key={count}
                                             type="button"
                                             aria-pressed={data.prayers.tahajjud === count}
                                             onClick={() =>
-                                                setData((current) => ({
-                                                    ...current,
-                                                    prayers: {
-                                                        ...current.prayers,
-                                                        tahajjud: count,
-                                                    },
-                                                }))
+                                                setData((current) => {
+                                                    setTahajjudCustom(false);
+                                                    return {
+                                                        ...current,
+                                                        prayers: {
+                                                            ...current.prayers,
+                                                            tahajjud: count,
+                                                        },
+                                                    };
+                                                })
                                             }
                                             className={`rounded-xl border px-2 py-2 text-xs ${
                                                 data.prayers.tahajjud === count
@@ -671,22 +702,26 @@ export function TodayScreen() {
                                     ))}
                                     <button
                                         type="button"
-                                        aria-pressed={![0, 2, 4, 6, 8].includes(data.prayers.tahajjud)}
+                                        aria-pressed={tahajjudCustom}
                                         onClick={() =>
-                                            setData((current) => ({
-                                                ...current,
-                                                prayers: {
-                                                    ...current.prayers,
-                                                    tahajjud:
-                                                        current.prayers.tahajjud &&
-                                                        ![0, 2, 4, 6, 8].includes(current.prayers.tahajjud)
-                                                            ? current.prayers.tahajjud
-                                                            : 2,
-                                                },
-                                            }))
+                                            setData((current) => {
+                                                const next =
+                                                    current.prayers.tahajjud &&
+                                                    !TAHAJJUD_PRESETS.includes(current.prayers.tahajjud)
+                                                        ? current.prayers.tahajjud
+                                                        : 1;
+                                                setTahajjudCustom(true);
+                                                return {
+                                                    ...current,
+                                                    prayers: {
+                                                        ...current.prayers,
+                                                        tahajjud: next,
+                                                    },
+                                                };
+                                            })
                                         }
                                         className={`rounded-xl border px-2 py-2 text-xs ${
-                                            ![0, 2, 4, 6, 8].includes(data.prayers.tahajjud)
+                                            tahajjudCustom
                                                 ? 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-200'
                                                 : 'border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'
                                         }`}
@@ -694,7 +729,7 @@ export function TodayScreen() {
                                         Custom
                                     </button>
                                 </div>
-                                {![0, 2, 4, 6, 8].includes(data.prayers.tahajjud) ? (
+                                {tahajjudCustom ? (
                                     <div className="mt-2 flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-xs">
                                         <span>Eigene Rakʿāt</span>
                                         <input
